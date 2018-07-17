@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
+import dinglydell.swinebot.config.Config;
 import dinglydell.swinebot.event.SwineEventHandler;
 
 public class SwineBot extends JavaPlugin {
@@ -34,6 +35,9 @@ public class SwineBot extends JavaPlugin {
 		for (Player p : Bukkit.getServer().getOnlinePlayers()) {
 			SwineEventHandler.injectPlayer(p);
 		}
+
+		Config.initConfig(this);
+
 	}
 
 	public void onDisable() {
@@ -56,11 +60,35 @@ public class SwineBot extends JavaPlugin {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
 			if (command.getName().equalsIgnoreCase("swine")) {
-				if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
+				if (args[0].equalsIgnoreCase("createall")) {
+					if (args.length <= 2) {
+
+						List<String> names = Config.getNames();
+
+						for (String name : names) {
+							Bot b = createNPC(player.getLocation(), name);
+							if (args.length == 2
+									&& args[1].equalsIgnoreCase("true")) {
+								//scatter bot
+								double x = Math.random() * 100;
+								double z = Math.random() * 100;
+								int y = player.getWorld()
+										.getHighestBlockYAt((int) x, (int) z);
+								b.teleportTo(new Location(player.getWorld(), x,
+										y, z), false);
+							}
+						}
+
+						return true;
+					}
+				} else if (args.length == 2
+						&& args[0].equalsIgnoreCase("create")) {
 					createNPC(player.getLocation(), args[1]);
 					sender.sendMessage("What a swine!");
 					return true;
+
 				} else if (args.length == 1) {
+
 					if (args[0].equalsIgnoreCase("clear")) {
 
 						clearBots();

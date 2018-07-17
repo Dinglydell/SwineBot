@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import com.mojang.authlib.GameProfile;
 
 import dinglydell.swinebot.Bot;
+import dinglydell.swinebot.config.Config;
 
 /** A fake player with no real connection */
 public class EntityPlayerDummy extends EntityPlayer {
@@ -50,7 +51,10 @@ public class EntityPlayerDummy extends EntityPlayer {
 	public boolean damageEntity(DamageSource damagesource, float f) {
 
 		if (super.damageEntity(damagesource, f)) {
-			bot.sendPackets(new PacketPlayOutEntityStatus(this, (byte) 2));
+
+			bot.sendPackets(new PacketPlayOutEntityStatus(this,
+					(byte) (damagesource.a() ? 37 : 2)));
+
 			return true;
 		}
 		return false;
@@ -61,9 +65,10 @@ public class EntityPlayerDummy extends EntityPlayer {
 		//super.die();
 
 		//	bot.respawn();
-
-		Bukkit.getServer().broadcastMessage(source
-				.getLocalizedDeathMessage(this).toPlainText());
+		if (Config.deathMessages) {
+			Bukkit.getServer().broadcastMessage(source
+					.getLocalizedDeathMessage(this).toPlainText());
+		}
 		//	this.setHealth(20);
 	}
 

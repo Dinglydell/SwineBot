@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 
 import dinglydell.swinebot.Bot;
 import dinglydell.swinebot.SwineBot;
+import dinglydell.swinebot.config.Config;
 import dinglydell.swinebot.entity.EntityPlayerDummy;
 
 public class SwineEventHandler implements Listener {
@@ -103,12 +104,14 @@ public class SwineEventHandler implements Listener {
 
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		double x = Math.random() * 100;
-		double z = Math.random() * 100;
-		//sample test
-		event.setRespawnLocation(new Location(event.getPlayer().getWorld(), x,
-				event.getPlayer().getWorld()
-						.getHighestBlockYAt((int) x, (int) z), z));
+		if (Config.scatterOnDeath) {
+			double x = Math.random() * 100;
+			double z = Math.random() * 100;
+			//sample test
+			event.setRespawnLocation(new Location(event.getPlayer().getWorld(),
+					x, event.getPlayer().getWorld()
+							.getHighestBlockYAt((int) x, (int) z), z));
+		}
 		if (!(((CraftPlayer) event.getPlayer()).getHandle() instanceof EntityPlayerDummy)) {
 			for (Bot b : SwineBot.npcs) {
 				b.showToPlayer(event.getPlayer());

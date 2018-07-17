@@ -200,6 +200,12 @@ public class Bot extends EntityCreature {
 							(byte) (this.yaw * 256.0F / 360.0)));
 		}
 
+		//if (player.isBurning() != isBurning()) {
+		//	player.fireTicks = isBurning() ? fireTicks : 0;
+		//	sendPackets(new PacketPlayOutEntityMetadata(player.getId(),
+		//			player.getDataWatcher(), true));
+		//}
+
 	}
 
 	public void jump() {
@@ -254,7 +260,7 @@ public class Bot extends EntityCreature {
 		Bukkit.getServer().getPluginManager().callEvent(ev);
 		//		b.player.setHealth(20);
 
-		teleport(ev.getRespawnLocation());
+		teleportTo(ev.getRespawnLocation(), false);
 		this.dead = true;
 		player.dead = true;
 	}
@@ -264,8 +270,9 @@ public class Bot extends EntityCreature {
 	 * 
 	 * @return The new entity
 	 */
-	public Bot teleport(Location location) {
+	public Entity teleportTo(Location location, boolean isPortal) {
 		leave();
+
 		SwineBot.npcs.remove(this);
 		Bot b = SwineBot.createNPC(location, player.getName());
 		b.player.setHealth(player.getHealth());
