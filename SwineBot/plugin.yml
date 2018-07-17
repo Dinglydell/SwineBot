@@ -1,0 +1,16 @@
+main: dinglydell.swinebot.SwineBot
+name: SwineBot
+version: 0.1
+author: Dinglydell
+description: An attempt
+commands:
+  swine:
+    description: Test.
+    usage: /swine <clear|create> [name]
+    permission: swine.commmand
+    permission-message: Sorry, I'm afraid I can't do that.
+permissions:
+  swine.command: 
+    description: Allows the /swine command
+    default: op
+    
