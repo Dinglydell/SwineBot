@@ -2,6 +2,7 @@ package dinglydell.swinebot;
 
 import java.util.UUID;
 
+import net.minecraft.server.v1_11_R1.BlockPosition;
 import net.minecraft.server.v1_11_R1.DamageSource;
 import net.minecraft.server.v1_11_R1.Entity;
 import net.minecraft.server.v1_11_R1.EntityCreature;
@@ -19,12 +20,8 @@ import net.minecraft.server.v1_11_R1.PacketPlayOutNamedEntitySpawn;
 import net.minecraft.server.v1_11_R1.PacketPlayOutPlayerInfo;
 import net.minecraft.server.v1_11_R1.PathfinderGoalFloat;
 import net.minecraft.server.v1_11_R1.PathfinderGoalHurtByTarget;
-import net.minecraft.server.v1_11_R1.PathfinderGoalLookAtPlayer;
 import net.minecraft.server.v1_11_R1.PathfinderGoalMeleeAttack;
-import net.minecraft.server.v1_11_R1.PathfinderGoalMoveTowardsRestriction;
 import net.minecraft.server.v1_11_R1.PathfinderGoalMoveTowardsTarget;
-import net.minecraft.server.v1_11_R1.PathfinderGoalNearestAttackableTarget;
-import net.minecraft.server.v1_11_R1.PathfinderGoalRandomLookaround;
 import net.minecraft.server.v1_11_R1.PlayerConnection;
 import net.minecraft.server.v1_11_R1.PlayerInteractManager;
 
@@ -34,10 +31,11 @@ import org.bukkit.craftbukkit.v1_11_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_11_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerRespawnEvent;
 
 import com.mojang.authlib.GameProfile;
 
-import dinglydell.swinebot.ai.PathfinderGoalNearestBot;
+import dinglydell.swinebot.ai.PathfinderGoalNearestBotOrPlayer;
 import dinglydell.swinebot.entity.EntityPlayerDummy;
 
 public class Bot extends EntityCreature {
@@ -83,18 +81,18 @@ public class Bot extends EntityCreature {
 		this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, 0.5d, true));
 		this.goalSelector.a(3, new PathfinderGoalMoveTowardsTarget(this, 0.5d,
 				999f));
-		this.goalSelector.a(5, new PathfinderGoalMoveTowardsRestriction(this,
-				1.0D));
+		//this.goalSelector.a(5, new PathfinderGoalMoveTowardsRestriction(this,
+		//		1.0D));
 		//this.goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D));
-		this.goalSelector.a(8, new PathfinderGoalLookAtPlayer(this,
-				EntityHuman.class, 8.0F));
-		this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
-		targetSelector.a(0, new PathfinderGoalHurtByTarget(this, true,
+		//this.goalSelector.a(8, new PathfinderGoalLookAtPlayer(this,
+		//		EntityHuman.class, 8.0F));
+		//this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
+		targetSelector.a(1, new PathfinderGoalHurtByTarget(this, true,
 				EntityPlayer.class));
-		targetSelector.a(1, new PathfinderGoalNearestBot(this, true));
-		targetSelector.a(2,
-				new PathfinderGoalNearestAttackableTarget<EntityPlayer>(this,
-						EntityPlayer.class, true));
+		targetSelector.a(2, new PathfinderGoalNearestBotOrPlayer(this, true));
+		//targetSelector.a(2,
+		//		new PathfinderGoalNearestAttackableTarget<EntityPlayer>(this,
+		//				EntityPlayer.class, true));
 		//new Navigation(arg0, arg1)
 	}
 
@@ -160,15 +158,24 @@ public class Bot extends EntityCreature {
 		player.attack(entity);
 		sendPackets(new PacketPlayOutAnimation(player, 0));
 		if (entity instanceof Bot) {
-
-			//	entity.addVelocity((double)(-MathHelper.sin(this.rotationYaw * (float)Math.PI / 180.0F) * (float)i * 0.5F), 0.1D, (double)(MathHelper.cos(this.rotationYaw * (float)Math.PI / 180.0F) * (float)i * 0.5F))
+			((Bot) entity).knockback(yaw);
 		}
 		return super.B(entity);
+	}
+
+	public void knockback(float yaw) {
+		int i = 1;
+		f((double) (-MathHelper.sin(yaw * (float) Math.PI / 180.0F) * (float) i * 0.5F),
+				0.2D,
+				(double) (MathHelper.cos(yaw * (float) Math.PI / 180.0F)
+						* (float) i * 0.5F));
+
 	}
 
 	public void tick() {
 		this.n();
 		doTick();
+		this.U();
 		if (player.invulnerableTicks > 0) {
 			player.invulnerableTicks--;
 		}
@@ -177,6 +184,7 @@ public class Bot extends EntityCreature {
 		}
 		if (player.getHealth() <= 0.0) {
 			//die();
+			respawn();
 
 		}
 		setToMyPosition();
@@ -230,6 +238,42 @@ public class Bot extends EntityCreature {
 
 	public EntityPlayer getPlayer() {
 		return player;
+	}
+
+	private void respawn() {
+		BlockPosition spawn = world.getSpawn();
+		//locX = (double) spawn.getX();
+		//locY = (double) spawn.getY() + 2;
+		//locZ = (double) spawn.getZ();
+		player.setHealth(20);
+
+		Location loc = new Location(world.getWorld(), spawn.getX(),
+				spawn.getY() + 5, spawn.getZ());
+		PlayerRespawnEvent ev = new PlayerRespawnEvent(
+				player.getBukkitEntity(), loc, false);
+		Bukkit.getServer().getPluginManager().callEvent(ev);
+		//		b.player.setHealth(20);
+
+		teleport(ev.getRespawnLocation());
+		this.dead = true;
+		player.dead = true;
+	}
+
+	/**
+	 * Deletes the entity and creates a copy at the destination.
+	 * 
+	 * @return The new entity
+	 */
+	public Bot teleport(Location location) {
+		leave();
+		SwineBot.npcs.remove(this);
+		Bot b = SwineBot.createNPC(location, player.getName());
+		b.player.setHealth(player.getHealth());
+		b.start();
+		//locX = location.getX();
+		//locY = location.getY();
+		//locZ = location.getZ();
+		return this;
 	}
 
 }

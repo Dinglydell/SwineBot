@@ -3,6 +3,7 @@ package dinglydell.swinebot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -24,22 +25,29 @@ public class SwineBot extends JavaPlugin {
 		BukkitScheduler scheduler = getServer().getScheduler();
 		scheduler.scheduleSyncRepeatingTask(this, new Runnable() {
 			public void run() {
-				for (Bot b : npcs) {
+				ArrayList<Bot> botsCopy = new ArrayList<Bot>(npcs);
+				for (Bot b : botsCopy) {
 					b.tick();
 				}
 			}
 		}, 0L, 1L);
+		for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+			SwineEventHandler.injectPlayer(p);
+		}
 	}
 
 	public void onDisable() {
 		super.onDisable();
 		clearBots();
+		for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+			SwineEventHandler.removePlayer(p);
+		}
 	}
 
-	public void createNPC(Player player, String npcName) {
-		Location location = player.getLocation();
-
-		npcs.add(new Bot(location, npcName));
+	public static Bot createNPC(Location location, String npcName) {
+		Bot bot = new Bot(location, npcName);
+		npcs.add(bot);
+		return bot;
 
 	}
 
@@ -49,7 +57,7 @@ public class SwineBot extends JavaPlugin {
 			Player player = (Player) sender;
 			if (command.getName().equalsIgnoreCase("swine")) {
 				if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
-					createNPC(player, args[1]);
+					createNPC(player.getLocation(), args[1]);
 					sender.sendMessage("What a swine!");
 					return true;
 				} else if (args.length == 1) {

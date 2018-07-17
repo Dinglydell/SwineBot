@@ -10,6 +10,8 @@ import net.minecraft.server.v1_11_R1.PacketPlayOutEntityStatus;
 import net.minecraft.server.v1_11_R1.PlayerInteractManager;
 import net.minecraft.server.v1_11_R1.WorldServer;
 
+import org.bukkit.Bukkit;
+
 import com.mojang.authlib.GameProfile;
 
 import dinglydell.swinebot.Bot;
@@ -58,6 +60,11 @@ public class EntityPlayerDummy extends EntityPlayer {
 	public void die(DamageSource source) {
 		//super.die();
 
+		//	bot.respawn();
+
+		Bukkit.getServer().broadcastMessage(source
+				.getLocalizedDeathMessage(this).toPlainText());
+		//	this.setHealth(20);
 	}
 
 }
