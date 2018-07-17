@@ -32,7 +32,6 @@ public class SwineBot extends JavaPlugin {
 	}
 
 	public void onDisable() {
-		// TODO Auto-generated method stub
 		super.onDisable();
 		clearBots();
 	}

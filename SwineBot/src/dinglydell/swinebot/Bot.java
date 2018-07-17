@@ -159,6 +159,10 @@ public class Bot extends EntityCreature {
 		//player.B(entity);
 		player.attack(entity);
 		sendPackets(new PacketPlayOutAnimation(player, 0));
+		if (entity instanceof Bot) {
+
+			//	entity.addVelocity((double)(-MathHelper.sin(this.rotationYaw * (float)Math.PI / 180.0F) * (float)i * 0.5F), 0.1D, (double)(MathHelper.cos(this.rotationYaw * (float)Math.PI / 180.0F) * (float)i * 0.5F))
+		}
 		return super.B(entity);
 	}
 
@@ -179,14 +183,14 @@ public class Bot extends EntityCreature {
 	}
 
 	private void setToMyPosition() {
-		player.setPosition(locX, locY, locZ);
-		player.setPositionRotation(locX, locY, locZ, yaw, pitch);
-		player.motX = this.motX;
-		player.motY = this.motY;
-		player.motZ = this.motZ;
-		sendPackets(new PacketPlayOutEntityTeleport(player),
-				new PacketPlayOutEntityHeadRotation(player,
-						(byte) (this.yaw * 256.0F / 360.0)));
+		if (player.locX != locX || player.locY != locY || player.locZ != locZ
+				|| player.yaw != yaw || player.pitch != pitch) {
+			//player.setPosition(locX, locY, locZ);
+			player.setPositionRotation(locX, locY, locZ, yaw, pitch);
+			sendPackets(new PacketPlayOutEntityTeleport(player),
+					new PacketPlayOutEntityHeadRotation(player,
+							(byte) (this.yaw * 256.0F / 360.0)));
+		}
 
 	}
 
@@ -198,8 +202,12 @@ public class Bot extends EntityCreature {
 
 	@Override
 	public boolean damageEntity(DamageSource damagesource, float f) {
-		player.damageEntity(damagesource, f);
-		return false;
+		Bukkit.getServer()
+				.getConsoleSender()
+				.sendMessage(player.getName() + " Health: "
+						+ player.getHealth());
+
+		return player.damageEntity(damagesource, f);
 	}
 
 	public boolean isLookingAtMe(Player player) {

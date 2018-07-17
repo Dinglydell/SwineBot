@@ -1,9 +1,5 @@
 package dinglydell.swinebot.entity;
 
-import com.mojang.authlib.GameProfile;
-
-import dinglydell.swinebot.Bot;
-
 import net.minecraft.server.v1_11_R1.Container;
 import net.minecraft.server.v1_11_R1.DamageSource;
 import net.minecraft.server.v1_11_R1.EntityPlayer;
@@ -14,6 +10,9 @@ import net.minecraft.server.v1_11_R1.PacketPlayOutEntityStatus;
 import net.minecraft.server.v1_11_R1.PlayerInteractManager;
 import net.minecraft.server.v1_11_R1.WorldServer;
 
+import com.mojang.authlib.GameProfile;
+
+import dinglydell.swinebot.Bot;
 
 /** A fake player with no real connection */
 public class EntityPlayerDummy extends EntityPlayer {
@@ -35,13 +34,30 @@ public class EntityPlayerDummy extends EntityPlayer {
 	}
 
 	@Override
+	public void enterCombat() {
+		//super.enterCombat();
+	}
+
+	@Override
+	public void exitCombat() {
+		// TODO Auto-generated method stub
+		//	super.exitCombat();
+	}
+
+	@Override
 	public boolean damageEntity(DamageSource damagesource, float f) {
 
-		if(super.damageEntity(damagesource, f)){
-			bot.sendPackets(new PacketPlayOutEntityStatus(this, (byte)2));
+		if (super.damageEntity(damagesource, f)) {
+			bot.sendPackets(new PacketPlayOutEntityStatus(this, (byte) 2));
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void die(DamageSource source) {
+		//super.die();
+
 	}
 
 }

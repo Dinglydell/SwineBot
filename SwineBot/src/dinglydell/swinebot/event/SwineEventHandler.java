@@ -10,7 +10,6 @@ import java.lang.reflect.Field;
 import net.minecraft.server.v1_11_R1.PacketPlayInUseEntity;
 import net.minecraft.server.v1_11_R1.PacketPlayInUseEntity.EnumEntityUseAction;
 
-import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_11_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -38,10 +37,18 @@ public class SwineEventHandler implements Listener {
 		removePlayer(event.getPlayer());
 	}
 
-	private void removePlayer(Player player) {
-		Channel channel = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel;
+	private void removePlayer(final Player player) {
+		final Channel channel = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel;
 		//final Player p = player;
-		channel.pipeline().remove(player.getName());
+		channel.eventLoop().submit(new Runnable() {
+
+			@Override
+			public void run() {
+				channel.pipeline().remove(player.getName());
+
+			}
+		});
+
 	}
 
 	private void injectPlayer(final Player player) {
@@ -54,8 +61,8 @@ public class SwineEventHandler implements Listener {
 
 					PacketPlayInUseEntity p = (PacketPlayInUseEntity) packet;
 					if (p.a() == EnumEntityUseAction.ATTACK) {
-						Bukkit.getServer().getConsoleSender()
-								.sendMessage(packet.toString());
+						//Bukkit.getServer().getConsoleSender()
+						//	.sendMessage(packet.toString());
 						if (p.a(((CraftWorld) player.getWorld()).getHandle()) == null) {
 							//gets messy here
 							Field idField = PacketPlayInUseEntity.class
@@ -65,7 +72,7 @@ public class SwineEventHandler implements Listener {
 							for (Bot b : SwineBot.npcs) {
 								if (id == b.getPlayerId()) {
 									((CraftPlayer) player).getHandle()
-											.attack(b.getPlayer());
+											.attack(b);
 									break;
 								}
 							}
@@ -74,6 +81,7 @@ public class SwineEventHandler implements Listener {
 				}
 				super.channelRead(context, packet);
 			}
+
 		};
 
 		ChannelPipeline pipeline = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel
