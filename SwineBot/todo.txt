@@ -1,0 +1,3 @@
+-get bots to work with items
+-allow bots to be hit by arrows
+-try to make it easier for the mcfaf plugin to deal with bots

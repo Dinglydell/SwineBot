@@ -1,5 +1,6 @@
 package dinglydell.swinebot;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 import net.minecraft.server.v1_11_R1.BlockPosition;
@@ -7,13 +8,17 @@ import net.minecraft.server.v1_11_R1.DamageSource;
 import net.minecraft.server.v1_11_R1.Entity;
 import net.minecraft.server.v1_11_R1.EntityCreature;
 import net.minecraft.server.v1_11_R1.EntityHuman;
+import net.minecraft.server.v1_11_R1.EntityLiving;
 import net.minecraft.server.v1_11_R1.EntityPlayer;
+import net.minecraft.server.v1_11_R1.EnumItemSlot;
 import net.minecraft.server.v1_11_R1.EnumMoveType;
+import net.minecraft.server.v1_11_R1.ItemStack;
 import net.minecraft.server.v1_11_R1.MathHelper;
 import net.minecraft.server.v1_11_R1.Packet;
 import net.minecraft.server.v1_11_R1.PacketPlayOutAnimation;
 import net.minecraft.server.v1_11_R1.PacketPlayOutEntity.PacketPlayOutEntityLook;
 import net.minecraft.server.v1_11_R1.PacketPlayOutEntityDestroy;
+import net.minecraft.server.v1_11_R1.PacketPlayOutEntityEquipment;
 import net.minecraft.server.v1_11_R1.PacketPlayOutEntityHeadRotation;
 import net.minecraft.server.v1_11_R1.PacketPlayOutEntityTeleport;
 import net.minecraft.server.v1_11_R1.PacketPlayOutNamedEntitySpawn;
@@ -24,6 +29,7 @@ import net.minecraft.server.v1_11_R1.PathfinderGoalMeleeAttack;
 import net.minecraft.server.v1_11_R1.PathfinderGoalMoveTowardsTarget;
 import net.minecraft.server.v1_11_R1.PlayerConnection;
 import net.minecraft.server.v1_11_R1.PlayerInteractManager;
+import net.minecraft.server.v1_11_R1.PlayerInventory;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -78,8 +84,9 @@ public class Bot extends EntityCreature {
 		//new Pathfin
 		this.goalSelector.a(0, new PathfinderGoalFloat(this));
 		//this.goalSelector.a(2, new PathfinderGoalZombieAttack(this, 1.0D, false));
+
 		this.goalSelector.a(2, new PathfinderGoalMeleeAttack(this, 0.5d, true));
-		this.goalSelector.a(3, new PathfinderGoalMoveTowardsTarget(this, 0.5d,
+		this.goalSelector.a(4, new PathfinderGoalMoveTowardsTarget(this, 0.5d,
 				999f));
 		//this.goalSelector.a(5, new PathfinderGoalMoveTowardsRestriction(this,
 		//		1.0D));
@@ -102,6 +109,10 @@ public class Bot extends EntityCreature {
 				PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER,
 				new EntityPlayer[] { player }));
 		connection.sendPacket(new PacketPlayOutNamedEntitySpawn(player));
+		PacketPlayOutEntityEquipment[] eqs = getInventoryPackets();
+		for (PacketPlayOutEntityEquipment eq : eqs) {
+			connection.sendPacket(eq);
+		}
 
 	}
 
@@ -154,8 +165,19 @@ public class Bot extends EntityCreature {
 	// attack entity
 	@Override
 	public boolean B(Entity entity) {
-		//player.B(entity);
+		// hack the cooldown it's bad
+		try {
+			Field f = EntityLiving.class.getDeclaredField("aE");
+			f.setAccessible(true);
+			f.set(player, 999);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		getAttributeMap()
+				.b(player.getItemInMainHand().a(EnumItemSlot.MAINHAND));
+		//player.getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue(  )
 		player.attack(entity);
+
 		sendPackets(new PacketPlayOutAnimation(player, 0));
 		if (entity instanceof Bot) {
 			((Bot) entity).knockback(yaw);
@@ -175,19 +197,63 @@ public class Bot extends EntityCreature {
 	public void tick() {
 		this.n();
 		doTick();
-		this.U();
+		this.A_();
 		if (player.invulnerableTicks > 0) {
 			player.invulnerableTicks--;
 		}
 		if (player.noDamageTicks > 0) {
 			player.noDamageTicks--;
 		}
+		player.A_();
+		updateEquipment();
 		if (player.getHealth() <= 0.0) {
 			//die();
 			respawn();
 
 		}
 		setToMyPosition();
+	}
+
+	private void updateEquipment() {
+		for (EnumItemSlot slot : EnumItemSlot.values()) {
+
+			//		switch(slot.a()){
+			//			case ARMOR:
+			//				this.bv
+			//				break;
+			//				case HAND:
+			//					break;
+			//			}
+			//			player.getEquipment()
+			//
+			// ItemStack itemstack;
+			//
+			// ItemStack itemstack1 = getEquipment(enumitemslot);
+			//
+			// if (!ItemStack.matches(itemstack1, itemstack)) {
+			//   ((WorldServer)this.world).getTracker().a(this, new PacketPlayOutEntityEquipment(getId(), enumitemslot, itemstack1));
+			//   if (!itemstack.isEmpty()) {
+			//     getAttributeMap().a(itemstack.a(enumitemslot));
+			//   }
+			//
+			//   if (!itemstack1.isEmpty()) {
+			//     getAttributeMap().b(itemstack1.a(enumitemslot));
+			//   }
+			//
+			//   switch (enumitemslot.a()) {
+			//   player.setSlot(slot, itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack());
+			//   case ARMOR:
+			//
+			//     player.bu.set(enumitemslot.b(), itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack());
+			//     break;
+			//
+			//   case HAND:
+			//     player.bv.set(enumitemslot.b(), itemstack1.isEmpty() ? ItemStack.a : itemstack1.cloneItemStack());
+			//   }
+			//
+			// }
+		}
+
 	}
 
 	private void setToMyPosition() {
@@ -214,13 +280,26 @@ public class Bot extends EntityCreature {
 
 	}
 
+	//public void setInventoryItem(int i, ItemStack stack){
+	//		this.player.inventory.setItem(i, stack);
+	//}
+
+	public void setSlot(EnumItemSlot slot, ItemStack stack) {
+		player.setSlot(slot, stack);
+		sendPackets(new PacketPlayOutEntityEquipment(player.getId(), slot,
+				stack));
+
+	}
+
 	@Override
 	public boolean damageEntity(DamageSource damagesource, float f) {
 		Bukkit.getServer()
 				.getConsoleSender()
 				.sendMessage(player.getName() + " Health: "
 						+ player.getHealth());
-
+		if (damagesource.getEntity() instanceof EntityLiving) {
+			a((EntityLiving) damagesource.getEntity());
+		}
 		return player.damageEntity(damagesource, f);
 	}
 
@@ -259,10 +338,32 @@ public class Bot extends EntityCreature {
 				player.getBukkitEntity(), loc, false);
 		Bukkit.getServer().getPluginManager().callEvent(ev);
 		//		b.player.setHealth(20);
-
-		teleportTo(ev.getRespawnLocation(), false);
+		//set inventory
+		this.player.inventory = ((CraftPlayer) ev.getPlayer()).getHandle().inventory;
+		Bot b = (Bot) teleportTo(ev.getRespawnLocation(), false);
 		this.dead = true;
+
+		Bukkit.getServer().getConsoleSender()
+				.sendMessage(b.player.getItemInMainHand().toString());
 		player.dead = true;
+	}
+
+	private void setInventory(PlayerInventory inventory) {
+		player.inventory = inventory;
+		sendPackets(getInventoryPackets());
+
+	}
+
+	private PacketPlayOutEntityEquipment[] getInventoryPackets() {
+		PacketPlayOutEntityEquipment[] eqs = new PacketPlayOutEntityEquipment[EnumItemSlot
+				.values().length];
+		for (int i = 0; i < eqs.length; i++) {
+			EnumItemSlot s = EnumItemSlot.values()[i];
+			eqs[i] = new PacketPlayOutEntityEquipment(player.getId(), s,
+					player.getEquipment(s));
+		}
+		return eqs;
+
 	}
 
 	/**
@@ -275,6 +376,7 @@ public class Bot extends EntityCreature {
 
 		SwineBot.npcs.remove(this);
 		Bot b = SwineBot.createNPC(location, player.getName());
+		b.setInventory(player.inventory);
 		b.player.setHealth(player.getHealth());
 		b.start();
 		//locX = location.getX();

@@ -4,6 +4,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -11,8 +12,11 @@ import java.util.List;
 
 import net.minecraft.server.v1_11_R1.PacketPlayInUseEntity;
 import net.minecraft.server.v1_11_R1.PacketPlayInUseEntity.EnumEntityUseAction;
+import net.minecraft.server.v1_11_R1.PacketPlayOutEntityEquipment;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_11_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -21,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 
 import dinglydell.swinebot.Bot;
 import dinglydell.swinebot.SwineBot;
@@ -92,6 +97,22 @@ public class SwineEventHandler implements Listener {
 				super.channelRead(context, packet);
 			}
 
+			@Override
+			public void write(ChannelHandlerContext paramChannelHandlerContext,
+					Object packet, ChannelPromise paramChannelPromise)
+					throws Exception {
+				if (packet instanceof PacketPlayOutEntityEquipment) {
+
+					PacketPlayOutEntityEquipment peq = (PacketPlayOutEntityEquipment) packet;
+					Bukkit.getServer().getConsoleSender()
+							.sendMessage(packet.toString());
+
+				}
+				super.write(paramChannelHandlerContext,
+						packet,
+						paramChannelPromise);
+			}
+
 		};
 
 		ChannelPipeline pipeline = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel
@@ -111,6 +132,11 @@ public class SwineEventHandler implements Listener {
 			event.setRespawnLocation(new Location(event.getPlayer().getWorld(),
 					x, event.getPlayer().getWorld()
 							.getHighestBlockYAt((int) x, (int) z), z));
+
+			event.getPlayer().getInventory().clear();
+
+			event.getPlayer().getInventory()
+					.addItem(new ItemStack(Material.WOOD_SWORD));
 		}
 		if (!(((CraftPlayer) event.getPlayer()).getHandle() instanceof EntityPlayerDummy)) {
 			for (Bot b : SwineBot.npcs) {
